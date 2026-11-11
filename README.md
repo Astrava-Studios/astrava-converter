@@ -33,16 +33,33 @@ Herhangi bir derleme veya kurulum gerektirmez. `index.html` dosyasını tarayıc
 3. **`astrava_batch_convert`**: Bir klasördeki tüm görselleri topluca dönüştürür ve boyutlarını küçültür.
 4. **`astrava_inspect_image`**: Görselin piksel çözünürlüğünü, dosya boyutunu, renk uzayını ve şeffaflık (alpha) kanalını analiz eder.
 
-### MCP Kurulumu (`mcp_config.json`)
-```bash
-npm install
-```
+### MCP Kurulumu (`mcp_config.json` — Sıfır Kurulum / Uzaktan GitHub Üzerinden)
+Projeyi bilgisayarınıza indirmenize (`git clone`) gerek kalmadan doğrudan GitHub üzerinden çalıştırabilirsiniz:
+
 ```json
 {
   "mcpServers": {
     "astrava-converter": {
-      "command": "node",
-      "args": ["C:/Users/Kaan/Desktop/Converter/mcp/index.js"]
+      "command": "cmd.exe",
+      "args": [
+        "/d",
+        "/c",
+        "npx",
+        "-y",
+        "github:Astrava-Studios/astrava-converter"
+      ]
+    }
+  }
+}
+```
+
+macOS / Linux için:
+```json
+{
+  "mcpServers": {
+    "astrava-converter": {
+      "command": "npx",
+      "args": ["-y", "github:Astrava-Studios/astrava-converter"]
     }
   }
 }
