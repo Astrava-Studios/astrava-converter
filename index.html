@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Astrava Converter — Internal Image & Asset Tool</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath d='M16 7L8 24h3.6l1.7-3.8h5.4L20.4 24H24L16 7zm-1.4 10.2L16 13.8l1.4 3.4h-2.8z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Harici Kütüphaneler (Tarayıcı içi HEIC, PDF ve ZIP Desteği) -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
+</head>
+<body>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3L4 20H7.8L9.6 16H14.4L16.2 20H20L12 3ZM10.8 12.8L12 9.8L13.2 12.8H10.8Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">Astrava Converter</span>
+          <span class="brand-badge">Internal Tool</span>
+          <span class="brand-sub-badge">Anything → Anything</span>
+        </div>
+      </div>
+      <div class="header-pills">
+        <div class="privacy-pill" title="Astrava şirket içi yerel araç — Dosyalar cihaz dışına çıkmaz.">
+          <span class="status-dot"></span>
+          Astrava Internal • %100 Local
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-layout">
+    <!-- Sol Panel: Dönüştürme & Boyut Düşürme Ayarları -->
+    <aside class="settings-panel card">
+      <div class="panel-header">
+        <h2>Dönüştürme & Sıkıştırma</h2>
+        <button id="resetSettingsBtn" class="btn-ghost btn-sm" title="Ayarları Sıfırla">Sıfırla</button>
+      </div>
+
+      <!-- Hedef Format (Anything to Anything) -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>Çıktı Formatı</span>
+          <span class="label-hint">Hedef uzantı</span>
+        </label>
+        <div class="format-grid" id="formatGrid">
+          <button type="button" class="format-chip active" data-format="image/webp" data-ext="webp">WEBP</button>
+          <button type="button" class="format-chip" data-format="image/jpeg" data-ext="jpg">JPG</button>
+          <button type="button" class="format-chip" data-format="image/png" data-ext="png">PNG</button>
+          <button type="button" class="format-chip" data-format="image/avif" data-ext="avif">AVIF</button>
+          <button type="button" class="format-chip" data-format="image/bmp" data-ext="bmp">BMP</button>
+          <button type="button" class="format-chip" data-format="image/x-icon" data-ext="ico">ICO</button>
+          <button type="button" class="format-chip" data-format="image/svg+xml" data-ext="svg">SVG</button>
+          <button type="button" class="format-chip" data-format="application/pdf" data-ext="pdf">PDF</button>
+        </div>
+        <p class="format-info" id="formatDescription">
+          WebP: Hem şeffaflık destekler hem de yüksek sıkıştırma ile en düşük MB boyutunu sunar.
+        </p>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Sıkıştırma Modu Seçimi -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>MB & Kalite Kontrolü</span>
+        </label>
+        <div class="segmented-control">
+          <button type="button" class="segment-btn active" data-mode="quality" id="modeQualityBtn">Kalite (%)</button>
+          <button type="button" class="segment-btn" data-mode="targetSize" id="modeTargetBtn">Hedef Boyut (MB/KB)</button>
+        </div>
+
+        <!-- Mod 1: Kalite Yüzdesi -->
+        <div id="qualityModeBox" class="mode-box">
+          <div class="slider-header">
+            <span>Görüntü Kalitesi</span>
+            <span class="mono-badge" id="qualityValueLabel">%80</span>
+          </div>
+          <input type="range" id="qualitySlider" min="5" max="100" value="80" class="range-slider" />
+          <div class="slider-marks">
+            <span>Min Boyut (%5)</span>
+            <span>Dengeli (%80)</span>
+            <span>Maks Kalite (%100)</span>
+          </div>
+        </div>
+
+        <!-- Mod 2: Hedef MB / KB Boyutu -->
+        <div id="targetSizeModeBox" class="mode-box hidden">
+          <label class="sub-label" for="targetSizeInput">Maksimum Dosya Boyutu</label>
+          <div class="input-with-unit">
+            <input type="number" id="targetSizeInput" value="0.5" min="0.01" step="0.1" placeholder="Örn: 0.5" />
+            <select id="targetUnitSelect">
+              <option value="MB" selected>MB</option>
+              <option value="KB">KB</option>
+            </select>
+          </div>
+          <div class="quick-presets">
+            <button type="button" class="preset-tag" data-val="100" data-unit="KB">100 KB</button>
+            <button type="button" class="preset-tag" data-val="250" data-unit="KB">250 KB</button>
+            <button type="button" class="preset-tag" data-val="500" data-unit="KB">500 KB</button>
+            <button type="button" class="preset-tag" data-val="1" data-unit="MB">1 MB</button>
+            <button type="button" class="preset-tag" data-val="2" data-unit="MB">2 MB</button>
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="autoScaleCheck" checked />
+            <span>Hedef boyuta inmezse çözünürlüğü de otomatik küçült</span>
+          </label>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Çözünürlük ve Yeniden Boyutlandırma -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>Çözünürlük / Boyutlandırma</span>
+        </label>
+        <select id="resizeModeSelect" class="select-input">
+          <option value="none">Orijinal Çözünürlüğü Koru</option>
+          <option value="scale">Yüzdeye Göre Küçült (%)</option>
+          <option value="maxDimensions">Maksimum Genişlik / Yükseklik Sınırla</option>
+          <option value="exact">Tam Boyut (Genişlik × Yükseklik)</option>
+        </select>
+
+        <!-- Yüzde ölçekleme -->
+        <div id="resizeScaleBox" class="sub-control hidden">
+          <div class="slider-header">
+            <span>Ölçek</span>
+            <span class="mono-badge" id="scaleValueLabel">%50</span>
+          </div>
+          <input type="range" id="scaleSlider" min="10" max="100" value="50" step="5" class="range-slider" />
+        </div>
+
+        <!-- Genişlik x Yükseklik -->
+        <div id="resizeDimensionsBox" class="sub-control hidden">
+          <div class="dim-inputs">
+            <div>
+              <span class="dim-label">Genişlik (px)</span>
+              <input type="number" id="resizeWidthInput" placeholder="Örn: 1920" min="1" max="16000" />
+            </div>
+            <span class="dim-sep">×</span>
+            <div>
+              <span class="dim-label">Yükseklik (px)</span>
+              <input type="number" id="resizeHeightInput" placeholder="Örn: 1080" min="1" max="16000" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Şeffaf Arka Plan Rengi (JPG/BMP gibi şeffaflık desteklemeyenler için) -->
+      <div class="control-group">
+        <div class="row-between">
+          <span class="control-label-inline">Şeffaf Arka Plan Dolgusu</span>
+          <div class="color-picker-wrap">
+            <input type="color" id="bgColorInput" value="#ffffff" />
+            <span id="bgColorHex" class="mono-text">#FFFFFF</span>
+          </div>
+        </div>
+        <span class="field-help">PNG/WebP'den JPG veya BMP'ye geçerken şeffaf alanların rengi.</span>
+      </div>
+
+      <!-- Aksiyon Butonu -->
+      <button id="convertAllBtn" class="btn-primary btn-block" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        <span id="convertAllBtnText">Tümünü Dönüştür</span>
+      </button>
+    </aside>
+
+    <!-- Sağ Alan: Yükleme Alanı, İstatistikler ve Dosya Listesi -->
+    <section class="workspace-area">
+      <!-- Sürükle & Bırak Yükleme Kutusu -->
+      <div id="dropzone" class="dropzone card" tabindex="0" role="button" aria-label="Resim yüklemek için tıklayın veya sürükleyin">
+        <input type="file" id="fileInput" multiple accept="image/*,.heic,.heif,.svg,.ico,.bmp,.avif,.webp,.tiff,.tif,.jfif" hidden />
+        <div class="dropzone-content">
+          <div class="dropzone-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h3>Resimleri buraya sürükleyin veya <span class="highlight-link">dosya seçin</span></h3>
+          <p class="dropzone-sub">
+            <strong>Anything to Anything:</strong> JPG, PNG, WEBP, AVIF, HEIC, SVG, GIF, BMP, ICO, TIFF
+            <span class="paste-hint">• <kbd>Ctrl+V</kbd> ile panodan yapıştırabilirsiniz</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Genel Tasarruf Özeti & Toplu İşlem Barı -->
+      <div id="batchToolbar" class="batch-toolbar card hidden">
+        <div class="stats-group">
+          <div class="stat-item">
+            <span class="stat-label">Dosya Sayısı</span>
+            <span class="stat-value" id="statCount">0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-label">Orijinal Toplam</span>
+            <span class="stat-value" id="statOrigTotal">0 MB</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-label">Yeni Toplam</span>
+            <span class="stat-value accent" id="statNewTotal">0 MB</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-label">Kazanç</span>
+            <span class="stat-badge" id="statSavingsBadge">%0</span>
+          </div>
+        </div>
+
+        <div class="batch-actions">
+          <button id="clearAllBtn" class="btn-secondary btn-sm">Listeyi Temizle</button>
+          <button id="downloadZipBtn" class="btn-success btn-sm" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Tümünü İndir (.ZIP)
+          </button>
+        </div>
+      </div>
+
+      <!-- Dosya Listesi -->
+      <div id="fileList" class="file-list"></div>
+    </section>
+  </main>
+
+  <!-- Öncesi / Sonrası Karşılaştırma Modalı -->
+  <div id="previewModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="modalFileName">Önizleme</h3>
+          <p id="modalFileMeta" class="modal-subtitle"></p>
+        </div>
+        <button id="closeModalBtn" class="btn-icon" aria-label="Kapat">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="compare-grid">
+          <div class="compare-pane">
+            <span class="pane-tag">Orijinal</span>
+            <div class="img-stage">
+              <img id="modalOrigImg" alt="Orijinal Resim" />
+            </div>
+            <div id="modalOrigInfo" class="pane-footer"></div>
+          </div>
+          <div class="compare-pane">
+            <span class="pane-tag accent">Dönüştürülmüş</span>
+            <div class="img-stage">
+              <img id="modalNewImg" alt="Dönüştürülmüş Resim" />
+            </div>
+            <div id="modalNewInfo" class="pane-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
